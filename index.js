@@ -74,15 +74,13 @@ app.ws('/ws', function(ws, req) {
                         status: status
                     }
                     if(status === 'picked-up') {
-                        data['picked-up'] = new Date()
+                        data['picked-up'] = new Date().toString()
                     } else if (status === 'in-transit') {
-                        data['start_time'] = new Date()
+                        data['start_time'] = new Date().toString()
                     } else if (status === 'delivered' || status === 'failed') {
-                        data['end_time'] = new Date()
+                        data['end_time'] = new Date().toString()
                     }
-                    Delivery.findByIdAndUpdate({_id: delivery_id}, {
-                        status: status
-                    }, {new: true})
+                    Delivery.findByIdAndUpdate({_id: delivery_id}, data, {new: true})
                         .then(delivery => {
                             const msgSend = {
                                 event: 'delivery_updated',
@@ -91,11 +89,11 @@ app.ws('/ws', function(ws, req) {
                             ws.broadcast(JSON.stringify(msgSend))
                         })
                         .catch(err => {
-                            console.error(err);
-                            res.status(500).send(err);
+                            console.log(err);
                         });
       } else if (message.event === 'location_changed') {
-          const location = message.location
+        const location = message.location
+        const delivery_id = message.delivery_id
         Delivery.findByIdAndUpdate({_id: delivery_id}, {
                         location: location
                     }, {new: true})
@@ -108,13 +106,12 @@ app.ws('/ws', function(ws, req) {
                         })
                         .catch(err => {
                             console.error(err);
-                            res.status(500).send(err);
                         });
       }
     });
 
     ws.broadcast = function broadcast(msg) {
-        ws.clients.forEach(function each(client) {
+        expressWs.getWss().clients.forEach(function each(client) {
             client.send(msg);
         });
      };
